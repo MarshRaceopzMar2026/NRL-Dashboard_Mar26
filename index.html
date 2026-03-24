@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NRL 2026 Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #111827;
+    --bg3: #1a2235;
+    --accent: #00d4aa;
+    --accent2: #0099ff;
+    --danger: #ff4757;
+    --warning: #ffa502;
+    --success: #2ed573;
+    --text: #e8eaf0;
+    --muted: #8892a4;
+    --border: rgba(255,255,255,0.08);
+    --top8: rgba(0,212,170,0.08);
+    --bottom: rgba(255,71,87,0.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; min-height: 100vh; }
+
+  .header {
+    background: linear-gradient(135deg, #0a0e1a 0%, #111827 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 1.25rem 1.25rem;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .logo { display: flex; align-items: center; gap: 0.75rem; }
+  .logo-badge { width: 36px; height: 36px; background: var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+  .logo-badge svg { width: 20px; height: 20px; fill: #0a0e1a; }
+  .logo-text { font-family: 'Barlow Condensed', sans-serif; font-size: 1.4rem; font-weight: 800; letter-spacing: 0.05em; color: var(--text); }
+  .logo-text span { color: var(--accent); }
+  .meta { font-size: 0.75rem; color: var(--muted); }
+
+  .upload-zone {
+    max-width: 1200px; margin: 2rem auto; padding: 0 1.25rem;
+  }
+  .upload-card {
+    border: 2px dashed rgba(0,212,170,0.3);
+    border-radius: 12px;
+    padding: 2.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(0,212,170,0.03);
+  }
+  .upload-card:hover { border-color: var(--accent); background: rgba(0,212,170,0.06); }
+  .upload-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+  .upload-title { font-family: 'Barlow Condensed', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--accent); margin-bottom: 0.4rem; }
+  .upload-sub { font-size: 0.875rem; color: var(--muted); }
+  #fileInput { display: none; }
+
+  .dashboard { max-width: 1200px; margin: 0 auto; padding: 0 1.25rem 3rem; display: none; }
+
+  .round-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: var(--accent); color: #0a0e1a;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.9rem; font-weight: 800; letter-spacing: 0.08em;
+    padding: 0.3rem 0.75rem; border-radius: 20px; margin-bottom: 1.5rem;
+  }
+
+  .section { margin-bottom: 2.5rem; }
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.1rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 1rem; padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .section-title::before { content: ''; display: block; width: 3px; height: 16px; background: var(--accent); border-radius: 2px; }
+
+  /* FIXTURES */
+  .fixtures-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem; }
+  .fixture-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem; transition: border-color 0.2s;
+  }
+  .fixture-card:hover { border-color: rgba(0,212,170,0.3); }
+  .fixture-kickoff { font-size: 0.7rem; color: var(--accent); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.6rem; }
+  .fixture-teams { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem; }
+  .fixture-home { font-family: 'Barlow Condensed', sans-serif; font-size: 1.05rem; font-weight: 700; color: var(--text); flex: 1; }
+  .fixture-vs { font-size: 0.7rem; color: var(--muted); font-weight: 600; }
+  .fixture-away { font-family: 'Barlow Condensed', sans-serif; font-size: 1.05rem; font-weight: 700; color: var(--muted); flex: 1; text-align: right; }
+  .fixture-venue { font-size: 0.75rem; color: var(--muted); }
+  .fixture-city { color: var(--accent2); font-weight: 500; }
+  .home-tag { font-size: 0.6rem; background: rgba(0,212,170,0.15); color: var(--accent); padding: 1px 5px; border-radius: 3px; font-weight: 600; }
+
+  /* BYES */
+  .byes-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .bye-pill {
+    background: rgba(255,165,2,0.12); border: 1px solid rgba(255,165,2,0.25);
+    color: var(--warning); font-size: 0.8rem; font-weight: 600;
+    padding: 0.3rem 0.75rem; border-radius: 20px;
+  }
+
+  /* LADDER */
+  .ladder-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .ladder-table th {
+    text-align: left; padding: 0.6rem 0.75rem;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem;
+    font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .ladder-table td { padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .ladder-table tr:last-child td { border-bottom: none; }
+  .ladder-table tr.top8 { background: var(--top8); }
+  .ladder-table tr.bottom { background: var(--bottom); }
+  .pos-num { font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 800; color: var(--muted); width: 28px; }
+  .pos-num.top4 { color: var(--accent); }
+  .team-name-cell { font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 700; }
+  .pts-cell { font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 800; color: var(--accent); }
+  .streak-win { color: var(--success); font-weight: 600; font-size: 0.8rem; }
+  .streak-loss { color: var(--danger); font-weight: 600; font-size: 0.8rem; }
+  .diff-pos { color: var(--success); }
+  .diff-neg { color: var(--danger); }
+  .top8-line td { border-bottom: 2px solid rgba(0,212,170,0.4) !important; }
+
+  /* STATS TABLE */
+  .stats-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .stats-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 900px; }
+  .stats-table th {
+    padding: 0.6rem 0.6rem; text-align: right;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.7rem;
+    font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--muted); border-bottom: 1px solid var(--border);
+    cursor: pointer; white-space: nowrap; user-select: none;
+    transition: color 0.15s;
+  }
+  .stats-table th:hover { color: var(--accent); }
+  .stats-table th.sorted { color: var(--accent); }
+  .stats-table th:first-child { text-align: left; }
+  .stats-table td { padding: 0.5rem 0.6rem; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .stats-table td:first-child { text-align: left; font-family: 'Barlow Condensed', sans-serif; font-size: 0.9rem; font-weight: 700; }
+  .stats-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .stats-table tr:last-child td { border-bottom: none; }
+  .val-best { color: var(--success); font-weight: 600; }
+  .val-worst { color: var(--danger); }
+  .val-warn { color: var(--warning); }
+  .sort-hint { font-size: 0.65rem; color: var(--muted); margin-top: 0.25rem; font-style: italic; }
+
+  .divider { height: 1px; background: var(--border); margin: 0.25rem 0; }
+
+  @media (max-width: 600px) {
+    .header-inner { flex-direction: column; align-items: flex-start; }
+    .fixture-card { padding: 0.875rem; }
+    .ladder-table { font-size: 0.78rem; }
+    .ladder-table td, .ladder-table th { padding: 0.45rem 0.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-badge">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <div>
+        <div class="logo-text">NRL <span>2026</span> Dashboard</div>
+        <div class="meta" id="metaLine">Load your weekly JSON file to begin</div>
+      </div>
+    </div>
+<label style="position:relative;display:inline-block">
+  <input type="file" id="fileInput" accept=".json" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer">
+  <div style="background:rgba(0,212,170,0.1);border:1px solid rgba(0,212,170,0.3);color:var(--accent);padding:0.4rem 1rem;border-radius:6px;font-size:0.8rem;font-weight:600;white-space:nowrap;cursor:pointer;pointer-events:none">
+    Load JSON File
+  </div>
+</label>
+  </div>
+</div>
+
+<div class="dashboard" id="dashboard">
+
+  <div id="roundBadge"></div>
+
+  <div class="section" id="fixturesSection">
+    <div class="section-title">Round Fixtures</div>
+    <div class="fixtures-grid" id="fixturesGrid"></div>
+  </div>
+
+  <div class="section" id="byesSection" style="display:none">
+    <div class="section-title">Bye Teams This Round</div>
+    <div class="byes-row" id="byesRow"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">2026 Ladder</div>
+    <div style="overflow-x:auto">
+      <table class="ladder-table" id="ladderTable">
+        <thead>
+          <tr>
+            <th>#</th><th>Team</th><th>Pts</th><th>W</th><th>L</th><th>D</th>
+            <th>PF</th><th>PA</th><th>Diff</th><th>Streak</th>
+          </tr>
+        </thead>
+        <tbody id="ladderBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Team Season Averages</div>
+    <div class="sort-hint">Tap any column header to sort</div>
+    <div style="height:0.5rem"></div>
+    <div class="stats-wrapper">
+      <table class="stats-table" id="statsTable">
+        <thead>
+          <tr>
+            <th onclick="sortStats('team')">Team</th>
+            <th onclick="sortStats('run_metres_avg')" title="Run Metres">Run Metres</th>
+            <th onclick="sortStats('post_contact_metres_avg')" title="Post Contact Metres">Post Con M</th>
+            <th onclick="sortStats('completion_rate_avg')" title="Completion Rate %">Comp Rate %</th>
+            <th onclick="sortStats('missed_tackles_avg')" title="Missed Tackles">Miss Tackles</th>
+            <th onclick="sortStats('errors_avg')" title="Errors">Errors</th>
+            <th onclick="sortStats('penalties_avg')" title="Penalties Conceded">Penalties</th>
+            <th onclick="sortStats('line_breaks_avg')" title="Line Breaks">Line Breaks</th>
+            <th onclick="sortStats('possession_avg')" title="Possession %">Poss %</th>
+            <th onclick="sortStats('kick_metres_avg')" title="Kick Metres">Kick Metres</th>
+            <th onclick="sortStats('tackle_efficiency_avg')" title="Effective Tackle %">Tackle Eff %</th>
+            <th onclick="sortStats('ptb_speed_avg')" title="Play The Ball Speed (lower=faster)">PTB Speed</th>
+          </tr>
+        </thead>
+        <tbody id="statsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let statsData = [];
+let sortKey = 'run_metres_avg';
+let sortAsc = false;
+
+const lowerBetter = ['missed_tackles_avg','errors_avg','penalties_avg','ptb_speed_avg'];
+
+document.getElementById('fileInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const data = JSON.parse(ev.target.result);
+      renderDashboard(data);
+    } catch(err) {
+      alert('Could not read file. Please make sure it is a valid NRL JSON file.');
+    }
+  };
+  reader.readAsText(file);
+});
+
+function renderDashboard(data) {
+  document.getElementById('dashboard').style.display = 'block';
+
+  const round = data.upcoming_round || '?';
+  const scraped = data.scraped_date || '';
+  document.getElementById('metaLine').textContent = `Round ${round} · Scraped ${scraped}`;
+  document.getElementById('roundBadge').innerHTML = `<div class="round-badge">Round ${round} Analysis</div>`;
+
+  // Fixtures
+  const fixturesKey = `round_${round}_fixtures`;
+  const fixtures = data[fixturesKey] || data.round_3_fixtures || [];
+  const grid = document.getElementById('fixturesGrid');
+  grid.innerHTML = '';
+  fixtures.forEach(f => {
+    const card = document.createElement('div');
+    card.className = 'fixture-card';
+    card.innerHTML = `
+      <div class="fixture-kickoff">${f.kickoff_nzt || ''}</div>
+      <div class="fixture-teams">
+        <div class="fixture-home">${f.home_team} <span class="home-tag">HOME</span></div>
+        <div class="fixture-vs">vs</div>
+        <div class="fixture-away">${f.away_team}</div>
+      </div>
+      <div class="fixture-venue">${f.venue} · <span class="fixture-city">${f.city}</span></div>
+    `;
+    grid.appendChild(card);
+  });
+
+  // Byes
+  const byesKey = `round_${round}_byes`;
+  const byes = data[byesKey] || data.round_3_byes || [];
+  if (byes.length > 0) {
+    document.getElementById('byesSection').style.display = 'block';
+    const byesRow = document.getElementById('byesRow');
+    byesRow.innerHTML = '';
+    byes.forEach(b => {
+      const pill = document.createElement('div');
+      pill.className = 'bye-pill';
+      pill.textContent = b.team + ' — BYE';
+      byesRow.appendChild(pill);
+    });
+  }
+
+  // Ladder
+  const ladder = data.ladder || [];
+  const tbody = document.getElementById('ladderBody');
+  tbody.innerHTML = '';
+  ladder.forEach((t, idx) => {
+    const tr = document.createElement('tr');
+    const pos = t.position;
+    if (pos <= 8) tr.classList.add('top8');
+    else tr.classList.add('bottom');
+    if (pos === 8) tr.classList.add('top8-line');
+    const streak = t.streak || '';
+    const streakClass = streak.includes('W') ? 'streak-win' : 'streak-loss';
+    const diff = t.points_difference;
+    const diffClass = diff > 0 ? 'diff-pos' : diff < 0 ? 'diff-neg' : '';
+    const posClass = pos <= 4 ? 'pos-num top4' : 'pos-num';
+    tr.innerHTML = `
+      <td class="${posClass}">${pos}</td>
+      <td class="team-name-cell">${t.team}</td>
+      <td class="pts-cell">${t.points}</td>
+      <td>${t.wins}</td>
+      <td>${t.losses}</td>
+      <td>${t.drawn}</td>
+      <td>${t.points_for}</td>
+      <td>${t.points_against}</td>
+      <td class="${diffClass}">${diff > 0 ? '+' : ''}${diff}</td>
+      <td class="${streakClass}">${streak}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Stats
+  const avgs = data.team_season_averages || {};
+  statsData = Object.entries(avgs).map(([team, s]) => ({ team, ...s }));
+  renderStats();
+}
+
+function getExtremes(key) {
+  const vals = statsData.map(r => r[key]).filter(v => v !== undefined);
+  return { min: Math.min(...vals), max: Math.max(...vals) };
+}
+
+function renderStats() {
+  const tbody = document.getElementById('statsBody');
+  tbody.innerHTML = '';
+
+  const sorted = [...statsData].sort((a, b) => {
+    if (sortKey === 'team') return sortAsc ? a.team.localeCompare(b.team) : b.team.localeCompare(a.team);
+    return sortAsc ? a[sortKey] - b[sortKey] : b[sortKey] - a[sortKey];
+  });
+
+  const keys = ['run_metres_avg','post_contact_metres_avg','completion_rate_avg',
+    'missed_tackles_avg','errors_avg','penalties_avg','line_breaks_avg',
+    'possession_avg','kick_metres_avg','tackle_efficiency_avg','ptb_speed_avg'];
+
+  const extremes = {};
+  keys.forEach(k => extremes[k] = getExtremes(k));
+
+  sorted.forEach(row => {
+    const tr = document.createElement('tr');
+    let html = `<td>${row.team}</td>`;
+    keys.forEach(k => {
+      const val = row[k];
+      const { min, max } = extremes[k];
+      let cls = '';
+      const isLower = lowerBetter.includes(k);
+      if (isLower) {
+        if (val === min) cls = 'val-best';
+        else if (val === max) cls = 'val-worst';
+        else if (k === 'completion_rate_avg' && val < 74) cls = 'val-warn';
+      } else {
+        if (val === max) cls = 'val-best';
+        else if (val === min) cls = 'val-worst';
+        if (k === 'completion_rate_avg' && val < 74) cls = 'val-warn';
+      }
+      html += `<td class="${cls}">${val}</td>`;
+    });
+    tr.innerHTML = html;
+    tbody.appendChild(tr);
+  });
+
+  document.querySelectorAll('.stats-table th').forEach(th => th.classList.remove('sorted'));
+  const ths = document.querySelectorAll('.stats-table th');
+  const keyMap = ['team',...keys];
+  const idx = keyMap.indexOf(sortKey);
+  if (idx >= 0) ths[idx].classList.add('sorted');
+}
+
+function sortStats(key) {
+  if (sortKey === key) sortAsc = !sortAsc;
+  else { sortKey = key; sortAsc = false; }
+  renderStats();
+}
+</script>
+</body>
+</html>
