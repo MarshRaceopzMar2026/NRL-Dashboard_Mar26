@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NRL 2026 Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #111827;
+    --bg3: #1a2235;
+    --accent: #00d4aa;
+    --accent2: #0099ff;
+    --danger: #ff4757;
+    --warning: #ffa502;
+    --success: #2ed573;
+    --text: #e8eaf0;
+    --muted: #8892a4;
+    --border: rgba(255,255,255,0.08);
+    --top8: rgba(0,212,170,0.08);
+    --bottom: rgba(255,71,87,0.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; min-height: 100vh; }
+
+  .header {
+    background: #0a0e1a;
+    border-bottom: 1px solid var(--border);
+    padding: 1.25rem;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 0.75rem; }
+  .logo-badge { width: 32px; height: 32px; background: var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .logo-badge svg { width: 18px; height: 18px; fill: none; stroke: #0a0e1a; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .logo-text { font-family: 'Barlow Condensed', sans-serif; font-size: 1.3rem; font-weight: 800; letter-spacing: 0.05em; }
+  .logo-text span { color: var(--accent); }
+  .meta { font-size: 0.72rem; color: var(--muted); margin-left: auto; text-align: right; }
+
+  .dashboard { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+
+  .round-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: var(--accent); color: #0a0e1a;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.85rem; font-weight: 800; letter-spacing: 0.08em;
+    padding: 0.25rem 0.75rem; border-radius: 20px; margin-bottom: 1.5rem;
+  }
+
+  .section { margin-bottom: 2.5rem; }
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 1rem; padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .section-title::before { content: ''; display: block; width: 3px; height: 14px; background: var(--accent); border-radius: 2px; }
+
+  .fixtures-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 0.75rem; }
+  .fixture-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 0.875rem; transition: border-color 0.2s;
+  }
+  .fixture-card:hover { border-color: rgba(0,212,170,0.3); }
+  .fixture-kickoff { font-size: 0.68rem; color: var(--accent); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0.5rem; }
+  .fixture-teams { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; }
+  .fixture-home { font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 700; flex: 1; }
+  .fixture-vs { font-size: 0.68rem; color: var(--muted); font-weight: 600; }
+  .fixture-away { font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 700; color: var(--muted); flex: 1; text-align: right; }
+  .fixture-venue { font-size: 0.72rem; color: var(--muted); }
+  .fixture-city { color: var(--accent2); font-weight: 500; }
+  .home-tag { font-size: 0.58rem; background: rgba(0,212,170,0.15); color: var(--accent); padding: 1px 4px; border-radius: 3px; font-weight: 600; vertical-align: middle; }
+
+  .byes-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .bye-pill {
+    background: rgba(255,165,2,0.12); border: 1px solid rgba(255,165,2,0.25);
+    color: var(--warning); font-size: 0.78rem; font-weight: 600;
+    padding: 0.25rem 0.7rem; border-radius: 20px;
+  }
+
+  .ladder-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .ladder-table th {
+    text-align: left; padding: 0.55rem 0.65rem;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.7rem;
+    font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  .ladder-table td { padding: 0.5rem 0.65rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .ladder-table tr:last-child td { border-bottom: none; }
+  .ladder-table tr.top8 td { background: var(--top8); }
+  .ladder-table tr.bottom td { background: var(--bottom); }
+  .ladder-table tr.top8-line td { border-bottom: 2px solid rgba(0,212,170,0.35) !important; }
+  .pos-num { font-family: 'Barlow Condensed', sans-serif; font-size: 0.95rem; font-weight: 800; color: var(--muted); }
+  .pos-num.top4 { color: var(--accent); }
+  .team-name-cell { font-family: 'Barlow Condensed', sans-serif; font-size: 0.95rem; font-weight: 700; }
+  .pts-cell { font-family: 'Barlow Condensed', sans-serif; font-size: 0.95rem; font-weight: 800; color: var(--accent); }
+  .streak-win { color: var(--success); font-weight: 600; }
+  .streak-loss { color: var(--danger); font-weight: 600; }
+  .diff-pos { color: var(--success); }
+  .diff-neg { color: var(--danger); }
+
+  .stats-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .sort-hint { font-size: 0.68rem; color: var(--muted); font-style: italic; margin-bottom: 0.5rem; }
+  .stats-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; min-width: 860px; }
+  .stats-table th {
+    padding: 0.55rem 0.55rem; text-align: right;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.68rem;
+    font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--muted); border-bottom: 1px solid var(--border);
+    cursor: pointer; white-space: nowrap; user-select: none; transition: color 0.15s;
+  }
+  .stats-table th:hover { color: var(--accent); }
+  .stats-table th.sorted { color: var(--accent); }
+  .stats-table th:first-child { text-align: left; }
+  .stats-table td { padding: 0.45rem 0.55rem; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .stats-table td:first-child { text-align: left; font-family: 'Barlow Condensed', sans-serif; font-size: 0.88rem; font-weight: 700; }
+  .stats-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .stats-table tr:last-child td { border-bottom: none; }
+  .val-best { color: var(--success); font-weight: 600; }
+  .val-worst { color: var(--danger); }
+  .val-warn { color: var(--warning); }
+
+  @media (max-width: 600px) {
+    .fixtures-grid { grid-template-columns: 1fr; }
+    .ladder-table td, .ladder-table th { padding: 0.4rem 0.45rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="logo-badge">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    </div>
+    <div class="logo-text">NRL <span>2026</span> Dashboard</div>
+    <div class="meta" id="metaLine" style="font-size:1rem;font-weight:600;color:var(--text)">Loading...</div>
+  </div>
+</div>
+
+<div class="dashboard" id="dashboard">
+  <div id="roundBadge"></div>
+  <div class="section" id="fixturesSection">
+    <div class="section-title">Round Fixtures</div>
+    <div class="fixtures-grid" id="fixturesGrid"></div>
+  </div>
+  <div class="section" id="byesSection" style="display:none">
+    <div class="section-title">Bye Teams This Round</div>
+    <div class="byes-row" id="byesRow"></div>
+  </div>
+  <div class="section">
+    <div class="section-title">2026 Ladder</div>
+    <div style="overflow-x:auto">
+      <table class="ladder-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Team</th><th>Pts</th><th>W</th><th>L</th><th>D</th>
+            <th>PF</th><th>PA</th><th>Diff</th><th>Streak</th>
+          </tr>
+        </thead>
+        <tbody id="ladderBody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Team Season Averages</div>
+    <div class="sort-hint">Tap any column header to sort by that stat</div>
+    <div class="stats-wrapper">
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th onclick="sortStats('team')">Team</th>
+            <th onclick="sortStats('run_metres_avg')">Run Metres</th>
+            <th onclick="sortStats('post_contact_metres_avg')">Post Con M</th>
+            <th onclick="sortStats('completion_rate_avg')">Comp Rate %</th>
+            <th onclick="sortStats('missed_tackles_avg')">Miss Tackles</th>
+            <th onclick="sortStats('errors_avg')">Errors</th>
+            <th onclick="sortStats('penalties_avg')">Penalties</th>
+            <th onclick="sortStats('line_breaks_avg')">Line Breaks</th>
+            <th onclick="sortStats('possession_avg')">Poss %</th>
+            <th onclick="sortStats('kick_metres_avg')">Kick Metres</th>
+            <th onclick="sortStats('tackle_efficiency_avg')">Tackle Eff %</th>
+            <th onclick="sortStats('ptb_speed_avg')">PTB Speed</th>
+          </tr>
+        </thead>
+        <tbody id="statsBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+var NRL_DATA = {
+  "scraped_date": "2026-03-25",
+  "season": 2026,
+  "upcoming_round": 4,
+  "ladder": [
+    {
+      "position": 1,
+      "team": "Warriors",
+      "points": 6,
+      "wins": 3,
+      "losses": 0,
+      "drawn": 0,
+      "points_for": 120,
+      "points_against": 36,
+      "points_difference": 84,
+      "streak": "3W",
+      "average_winning_margin": 28.0,
+      "average_losing_margin": 0.0
+    },
+    {
+      "position": 2,
+      "team": "Panthers",
+      "points": 6,
+      "wins": 3,
+      "losses": 0,
+      "drawn": 0,
+      "points_for": 92,
+      "points_against": 10,
+      "points_difference": 82,
+      "streak": "3W",
+      "average_winning_margin": 27.3,
+      "average_losing_margin": 0.0
+    },
+    {
+      "position": 3,
+      "team": "Bulldogs",
+      "points": 6,
+      "wins": 2,
+      "losses": 0,
+      "drawn": 0,
+      "points_for": 29,
+      "points_against": 24,
+      "points_difference": 5,
+      "streak": "2W",
+      "average_winning_margin": 2.5,
+      "average_losing_margin": 0.0
+    },
+    {
+      "position": 4,
+      "team": "Storm",
+      "points": 4,
+      "wins": 2,
+      "losses": 1,
+      "drawn": 0,
+      "points_for": 112,
+      "points_against": 42,
+      "points_difference": 70,
+      "streak": "1L",
+      "average_winning_margin": 37.0,
+      "average_losing_margin": 4.0
+    },
+    {
+      "position": 5,
+      "team": "Wests Tigers",
+      "points": 4,
+      "wins": 1,
+      "losses": 1,
+      "drawn": 0,
+      "points_for": 60,
+      "points_against": 36,
+      "points_difference": 24,
+      "streak": "1L",
+      "average_winning_margin": 28.0,
+      "average_losing_margin": 4.0
+    },
+    {
+      "position": 6,
+      "team": "Dolphins",
+      "points": 4,
+      "wins": 2,
+      "losses": 1,
+      "drawn": 0,
+      "points_for": 86,
+      "points_against": 64,
+      "points_difference": 22,
+      "streak": "2W",
+      "average_winning_margin": 16.0,
+      "average_losing_margin": 10.0
+    },
+    {
+      "position": 7,
+      "team": "Rabbitohs",
+      "points": 4,
+      "wins": 2,
+      "losses": 1,
+      "drawn": 0,
+      "points_for": 78,
+      "points_against": 72,
+      "points_difference": 6,
+      "streak": "1W",
+      "average_winning_margin": 7.0,
+      "average_losing_margin": 8.0
+    },
+    {
+      "position": 8,
+      "team": "Knights",
+      "points": 4,
+      "wins": 2,
+      "losses": 1,
+      "drawn": 0,
+      "points_for": 76,
+      "points_against": 72,
+      "points_difference": 4,
+      "streak": "1L",
+      "average_winning_margin": 15.0,
+      "average_losing_margin": 26.0
+    },
+    {
+      "position": 9,
+      "team": "Eels",
+      "points": 4,
+      "wins": 2,
+      "losses": 1,
+      "drawn": 0,
+      "points_for": 74,
+      "points_against": 104,
+      "points_difference": -30,
+      "streak": "2W",
+      "average_winning_margin": 9.0,
+      "average_losing_margin": 48.0
+    },
+    {
+      "position": 10,
+      "team": "Sharks",
+      "points": 2,
+      "wins": 1,
+      "losses": 2,
+      "drawn": 0,
+      "points_for": 66,
+      "points_against": 74,
+      "points_difference": -8,
+      "streak": "2L",
+      "average_winning_margin": 40.0,
+      "average_losing_margin": 24.0
+    },
+    {
+      "position": 11,
+      "team": "Sea Eagles",
+      "points": 2,
+      "wins": 0,
+      "losses": 2,
+      "drawn": 0,
+      "points_for": 44,
+      "points_against": 65,
+      "points_difference": -21,
+      "streak": "2L",
+      "average_winning_margin": 0.0,
+      "average_losing_margin": 10.5
+    },
+    {
+      "position": 12,
+      "team": "Cowboys",
+      "points": 2,
+      "wins": 1,
+      "losses": 2,
+      "drawn": 0,
+      "points_for": 64,
+      "points_against": 88,
+      "points_difference": -24,
+      "streak": "1W",
+      "average_winning_margin": 14.0,
+      "average_losing_margin": 19.0
+    },
+    {
+      "position": 13,
+      "team": "Broncos",
+      "points": 2,
+      "wins": 1,
+      "losses": 2,
+      "drawn": 0,
+      "points_for": 50,
+      "points_against": 80,
+      "points_difference": -30,
+      "streak": "1W",
+      "average_winning_margin": 4.0,
+      "average_losing_margin": 17.0
+    },
+    {
+      "position": 14,
+      "team": "Raiders",
+      "points": 2,
+      "wins": 1,
+      "losses": 2,
+      "drawn": 0,
+      "points_for": 45,
+      "points_against": 82,
+      "points_difference": -37,
+      "streak": "2L",
+      "average_winning_margin": 1.0,
+      "average_losing_margin": 19.0
+    },
+    {
+      "position": 15,
+      "team": "Roosters",
+      "points": 2,
+      "wins": 1,
+      "losses": 2,
+      "drawn": 0,
+      "points_for": 48,
+      "points_against": 100,
+      "points_difference": -52,
+      "streak": "1L",
+      "average_winning_margin": 8.0,
+      "average_losing_margin": 30.0
+    },
+    {
+      "position": 16,
+      "team": "Dragons",
+      "points": 0,
+      "wins": 0,
+      "losses": 3,
+      "drawn": 0,
+      "points_for": 54,
+      "points_against": 91,
+      "points_difference": -37,
+      "streak": "3L",
+      "average_winning_margin": 0.0,
+      "average_losing_margin": 12.3
+    },
+    {
+      "position": 17,
+      "team": "Titans",
+      "points": 0,
+      "wins": 0,
+      "losses": 3,
+      "drawn": 0,
+      "points_for": 40,
+      "points_against": 98,
+      "points_difference": -58,
+      "streak": "3L",
+      "average_winning_margin": 0.0,
+      "average_losing_margin": 19.3
+    }
+  ],
+  "team_season_averages": {
+    "Knights": {
+      "games_played": 3,
+      "run_metres_avg": 1691,
+      "post_contact_metres_avg": 540,
+      "completion_rate_avg": 73.7,
+      "missed_tackles_avg": 30.7,
+      "errors_avg": 12.3,
+      "penalties_avg": 6.0,
+      "line_breaks_avg": 4.7,
+      "possession_avg": 49.7,
+      "kick_metres_avg": 585,
+      "tackle_efficiency_avg": 89.0,
+      "ptb_speed_avg": 3.6
+    },
+    "Cowboys": {
+      "games_played": 3,
+      "run_metres_avg": 1781,
+      "post_contact_metres_avg": 603,
+      "completion_rate_avg": 77.0,
+      "missed_tackles_avg": 39.3,
+      "errors_avg": 11.7,
+      "penalties_avg": 6.0,
+      "line_breaks_avg": 3.7,
+      "possession_avg": 51.3,
+      "kick_metres_avg": 510,
+      "tackle_efficiency_avg": 85.7,
+      "ptb_speed_avg": 3.26
+    },
+    "Bulldogs": {
+      "games_played": 2,
+      "run_metres_avg": 2024,
+      "post_contact_metres_avg": 601,
+      "completion_rate_avg": 85.5,
+      "missed_tackles_avg": 39.0,
+      "errors_avg": 8.5,
+      "penalties_avg": 3.0,
+      "line_breaks_avg": 4.5,
+      "possession_avg": 52.0,
+      "kick_metres_avg": 834,
+      "tackle_efficiency_avg": 86.9,
+      "ptb_speed_avg": 3.63
+    },
+    "Dragons": {
+      "games_played": 3,
+      "run_metres_avg": 1819,
+      "post_contact_metres_avg": 633,
+      "completion_rate_avg": 79.3,
+      "missed_tackles_avg": 35.7,
+      "errors_avg": 9.7,
+      "penalties_avg": 5.3,
+      "line_breaks_avg": 3.7,
+      "possession_avg": 49.3,
+      "kick_metres_avg": 702,
+      "tackle_efficiency_avg": 88.1,
+      "ptb_speed_avg": 3.6
+    },
+    "Storm": {
+      "games_played": 3,
+      "run_metres_avg": 1957,
+      "post_contact_metres_avg": 628,
+      "completion_rate_avg": 85.3,
+      "missed_tackles_avg": 31.0,
+      "errors_avg": 8.3,
+      "penalties_avg": 4.7,
+      "line_breaks_avg": 8.7,
+      "possession_avg": 53.3,
+      "kick_metres_avg": 540,
+      "tackle_efficiency_avg": 88.2,
+      "ptb_speed_avg": 3.65
+    },
+    "Eels": {
+      "games_played": 3,
+      "run_metres_avg": 1558,
+      "post_contact_metres_avg": 490,
+      "completion_rate_avg": 79.0,
+      "missed_tackles_avg": 36.0,
+      "errors_avg": 11.0,
+      "penalties_avg": 5.0,
+      "line_breaks_avg": 3.3,
+      "possession_avg": 48.0,
+      "kick_metres_avg": 589,
+      "tackle_efficiency_avg": 86.6,
+      "ptb_speed_avg": 3.66
+    },
+    "Warriors": {
+      "games_played": 3,
+      "run_metres_avg": 1792,
+      "post_contact_metres_avg": 626,
+      "completion_rate_avg": 84.7,
+      "missed_tackles_avg": 33.3,
+      "errors_avg": 8.3,
+      "penalties_avg": 3.7,
+      "line_breaks_avg": 5.7,
+      "possession_avg": 55.7,
+      "kick_metres_avg": 675,
+      "tackle_efficiency_avg": 85.3,
+      "ptb_speed_avg": 3.85
+    },
+    "Roosters": {
+      "games_played": 3,
+      "run_metres_avg": 1627,
+      "post_contact_metres_avg": 530,
+      "completion_rate_avg": 70.7,
+      "missed_tackles_avg": 31.7,
+      "errors_avg": 14.3,
+      "penalties_avg": 7.7,
+      "line_breaks_avg": 4.7,
+      "possession_avg": 47.3,
+      "kick_metres_avg": 437,
+      "tackle_efficiency_avg": 88.8,
+      "ptb_speed_avg": 3.54
+    },
+    "Broncos": {
+      "games_played": 3,
+      "run_metres_avg": 1512,
+      "post_contact_metres_avg": 493,
+      "completion_rate_avg": 69.3,
+      "missed_tackles_avg": 34.7,
+      "errors_avg": 14.0,
+      "penalties_avg": 7.0,
+      "line_breaks_avg": 2.7,
+      "possession_avg": 46.0,
+      "kick_metres_avg": 561,
+      "tackle_efficiency_avg": 87.7,
+      "ptb_speed_avg": 3.48
+    },
+    "Panthers": {
+      "games_played": 3,
+      "run_metres_avg": 1787,
+      "post_contact_metres_avg": 514,
+      "completion_rate_avg": 81.0,
+      "missed_tackles_avg": 31.7,
+      "errors_avg": 11.7,
+      "penalties_avg": 2.7,
+      "line_breaks_avg": 5.3,
+      "possession_avg": 53.7,
+      "kick_metres_avg": 620,
+      "tackle_efficiency_avg": 87.2,
+      "ptb_speed_avg": 3.5
+    },
+    "Sharks": {
+      "games_played": 3,
+      "run_metres_avg": 1520,
+      "post_contact_metres_avg": 475,
+      "completion_rate_avg": 79.3,
+      "missed_tackles_avg": 26.0,
+      "errors_avg": 10.7,
+      "penalties_avg": 6.3,
+      "line_breaks_avg": 4.3,
+      "possession_avg": 49.7,
+      "kick_metres_avg": 571,
+      "tackle_efficiency_avg": 89.9,
+      "ptb_speed_avg": 3.65
+    },
+    "Titans": {
+      "games_played": 3,
+      "run_metres_avg": 1377,
+      "post_contact_metres_avg": 453,
+      "completion_rate_avg": 78.3,
+      "missed_tackles_avg": 32.7,
+      "errors_avg": 11.3,
+      "penalties_avg": 5.3,
+      "line_breaks_avg": 3.7,
+      "possession_avg": 45.3,
+      "kick_metres_avg": 578,
+      "tackle_efficiency_avg": 88.2,
+      "ptb_speed_avg": 3.49
+    },
+    "Sea Eagles": {
+      "games_played": 2,
+      "run_metres_avg": 1459,
+      "post_contact_metres_avg": 451,
+      "completion_rate_avg": 76.0,
+      "missed_tackles_avg": 45.5,
+      "errors_avg": 11.5,
+      "penalties_avg": 5.0,
+      "line_breaks_avg": 4.0,
+      "possession_avg": 47.0,
+      "kick_metres_avg": 555,
+      "tackle_efficiency_avg": 83.9,
+      "ptb_speed_avg": 3.54
+    },
+    "Raiders": {
+      "games_played": 3,
+      "run_metres_avg": 1605,
+      "post_contact_metres_avg": 507,
+      "completion_rate_avg": 78.3,
+      "missed_tackles_avg": 33.0,
+      "errors_avg": 10.3,
+      "penalties_avg": 7.3,
+      "line_breaks_avg": 4.3,
+      "possession_avg": 47.7,
+      "kick_metres_avg": 541,
+      "tackle_efficiency_avg": 89.7,
+      "ptb_speed_avg": 3.52
+    },
+    "Dolphins": {
+      "games_played": 3,
+      "run_metres_avg": 1770,
+      "post_contact_metres_avg": 489,
+      "completion_rate_avg": 75.3,
+      "missed_tackles_avg": 31.7,
+      "errors_avg": 11.3,
+      "penalties_avg": 4.0,
+      "line_breaks_avg": 4.0,
+      "possession_avg": 48.0,
+      "kick_metres_avg": 545,
+      "tackle_efficiency_avg": 89.3,
+      "ptb_speed_avg": 3.37
+    },
+    "Rabbitohs": {
+      "games_played": 3,
+      "run_metres_avg": 1648,
+      "post_contact_metres_avg": 490,
+      "completion_rate_avg": 77.3,
+      "missed_tackles_avg": 32.0,
+      "errors_avg": 13.3,
+      "penalties_avg": 6.0,
+      "line_breaks_avg": 4.7,
+      "possession_avg": 52.0,
+      "kick_metres_avg": 576,
+      "tackle_efficiency_avg": 86.1,
+      "ptb_speed_avg": 3.54
+    },
+    "Wests Tigers": {
+      "games_played": 2,
+      "run_metres_avg": 1883,
+      "post_contact_metres_avg": 668,
+      "completion_rate_avg": 80.0,
+      "missed_tackles_avg": 30.5,
+      "errors_avg": 12.0,
+      "penalties_avg": 4.0,
+      "line_breaks_avg": 6.0,
+      "possession_avg": 55.5,
+      "kick_metres_avg": 413,
+      "tackle_efficiency_avg": 86.0,
+      "ptb_speed_avg": 3.65
+    }
+  },
+  "round_4_fixtures": [
+    {
+      "home_team": "Sea Eagles",
+      "away_team": "Roosters",
+      "venue": "4 Pines Park",
+      "city": "Sydney",
+      "kickoff_nzt": "Thu, 26/03/2026 10:00 PM NZT",
+      "match_state": "Upcoming"
+    },
+    {
+      "home_team": "Warriors",
+      "away_team": "Wests Tigers",
+      "venue": "Go Media Stadium",
+      "city": "Auckland",
+      "kickoff_nzt": "Fri, 27/03/2026 08:00 PM NZT",
+      "match_state": "Upcoming"
+    },
+    {
+      "home_team": "Broncos",
+      "away_team": "Dolphins",
+      "venue": "Suncorp Stadium",
+      "city": "Brisbane",
+      "kickoff_nzt": "Fri, 27/03/2026 10:00 PM NZT",
+      "match_state": "Upcoming"
+    },
+    {
+      "home_team": "Bulldogs",
+      "away_team": "Knights",
+      "venue": "Accor Stadium",
+      "city": "Sydney",
+      "kickoff_nzt": "Sat, 28/03/2026 05:00 PM NZT",
+      "match_state": "Upcoming"
+    },
+    {
+      "home_team": "Panthers",
+      "away_team": "Eels",
+      "venue": "CommBank Stadium",
+      "city": "Sydney",
+      "kickoff_nzt": "Sat, 28/03/2026 07:30 PM NZT",
+      "match_state": "Upcoming"
+    },
+    {
+      "home_team": "Cowboys",
+      "away_team": "Storm",
+      "venue": "Queensland Country Bank Stadium",
+      "city": "Townsville",
+      "kickoff_nzt": "Sat, 28/03/2026 09:35 PM NZT",
+      "match_state": "Upcoming"
+    },
+    {
+      "home_team": "Raiders",
+      "away_team": "Sharks",
+      "venue": "GIO Stadium",
+      "city": "Canberra",
+      "kickoff_nzt": "Sun, 29/03/2026 06:05 PM NZT",
+      "match_state": "Upcoming"
+    },
+    {
+      "home_team": "Titans",
+      "away_team": "Dragons",
+      "venue": "Cbus Super Stadium",
+      "city": "Gold Coast",
+      "kickoff_nzt": "Sun, 29/03/2026 08:15 PM NZT",
+      "match_state": "Upcoming"
+    }
+  ],
+  "round_4_byes": [
+    {
+      "team": "Rabbitohs",
+      "note": "On bye this round \u2014 will have extra rest advantage next round"
+    }
+  ]
+};
+
+var statsData = [];
+var sortKey = 'run_metres_avg';
+var sortAsc = false;
+var lowerBetter = ['missed_tackles_avg','errors_avg','penalties_avg','ptb_speed_avg'];
+
+function init() {
+  if (!NRL_DATA) {
+    document.getElementById('metaLine').textContent = 'No data loaded';
+    return;
+  }
+  var data = NRL_DATA;
+  var round = data.upcoming_round || '?';
+  var scraped = data.scraped_date || '';
+  document.getElementById('metaLine').textContent = 'Round ' + round + ' \u00b7 Scraped ' + scraped;
+  document.getElementById('roundBadge').innerHTML = '<div class="round-badge">Round ' + round + ' Analysis</div>';
+
+  var fixturesKey = 'round_' + round + '_fixtures';
+  var fixtures = data[fixturesKey] || [];
+  var grid = document.getElementById('fixturesGrid');
+  grid.innerHTML = '';
+  fixtures.forEach(function(f) {
+    var card = document.createElement('div');
+    card.className = 'fixture-card';
+    card.innerHTML =
+      '<div class="fixture-kickoff">' + (f.kickoff_nzt || '') + '</div>' +
+      '<div class="fixture-teams">' +
+        '<div class="fixture-home">' + f.home_team + ' <span style="color:var(--muted);font-size:0.8rem">(' + (ladderPos[f.home_team] || '?') + ')</span></div>' +
+        '<div class="fixture-vs">vs</div>' +
+        '<div class="fixture-away">' + f.away_team + ' <span style="color:var(--muted);font-size:0.8rem">(' + (ladderPos[f.away_team] || '?') + ')</span></div>' +
+      '</div>' +
+      '<div class="fixture-venue">' + f.venue + ' \u00b7 <span class="fixture-city">' + f.city + '</span></div>';
+    grid.appendChild(card);
+  });
+
+  var byesKey = 'round_' + round + '_byes';
+  var byes = data[byesKey] || [];
+  if (byes.length > 0) {
+    document.getElementById('byesSection').style.display = 'block';
+    var byesRow = document.getElementById('byesRow');
+    byesRow.innerHTML = '';
+    byes.forEach(function(b) {
+      var pill = document.createElement('div');
+      pill.className = 'bye-pill';
+      pill.textContent = (b.team || 'Unknown') + ' \u2014 BYE';
+      byesRow.appendChild(pill);
+    });
+  }
+
+  var ladder = data.ladder || [];
+  var ladderPos = {};
+  ladder.forEach(function(t){ ladderPos[t.team] = t.position; });
+  var tbody = document.getElementById('ladderBody');
+  tbody.innerHTML = '';
+  ladder.forEach(function(t) {
+    var tr = document.createElement('tr');
+    var pos = t.position;
+    if (pos <= 8) tr.classList.add('top8');
+    else tr.classList.add('bottom');
+    if (pos === 8) tr.classList.add('top8-line');
+    var streak = t.streak || '';
+    var streakClass = streak.indexOf('W') >= 0 ? 'streak-win' : 'streak-loss';
+    var diff = t.points_difference;
+    var diffClass = diff > 0 ? 'diff-pos' : diff < 0 ? 'diff-neg' : '';
+    var posClass = pos <= 4 ? 'pos-num top4' : 'pos-num';
+    tr.innerHTML =
+      '<td class="' + posClass + '">' + pos + '</td>' +
+      '<td class="team-name-cell">' + t.team + '</td>' +
+      '<td class="pts-cell">' + t.points + '</td>' +
+      '<td>' + t.wins + '</td>' +
+      '<td>' + t.losses + '</td>' +
+      '<td>' + t.drawn + '</td>' +
+      '<td>' + t.points_for + '</td>' +
+      '<td>' + t.points_against + '</td>' +
+      '<td class="' + diffClass + '">' + (diff > 0 ? '+' : '') + diff + '</td>' +
+      '<td class="' + streakClass + '">' + streak + '</td>';
+    tbody.appendChild(tr);
+  });
+
+  var avgs = data.team_season_averages || {};
+  statsData = Object.keys(avgs).map(function(team) {
+    return Object.assign({ team: team }, avgs[team]);
+  });
+  renderStats();
+}
+
+function getExtremes(key) {
+  var vals = statsData.map(function(r) { return r[key]; }).filter(function(v) { return v !== undefined; });
+  return { min: Math.min.apply(null, vals), max: Math.max.apply(null, vals) };
+}
+
+function renderStats() {
+  var tbody = document.getElementById('statsBody');
+  tbody.innerHTML = '';
+  var sorted = statsData.slice().sort(function(a, b) {
+    if (sortKey === 'team') return sortAsc ? a.team.localeCompare(b.team) : b.team.localeCompare(a.team);
+    return sortAsc ? a[sortKey] - b[sortKey] : b[sortKey] - a[sortKey];
+  });
+
+  var keys = ['run_metres_avg','post_contact_metres_avg','completion_rate_avg',
+    'missed_tackles_avg','errors_avg','penalties_avg','line_breaks_avg',
+    'possession_avg','kick_metres_avg','tackle_efficiency_avg','ptb_speed_avg'];
+
+  var extremes = {};
+  keys.forEach(function(k) { extremes[k] = getExtremes(k); });
+
+  sorted.forEach(function(row) {
+    var tr = document.createElement('tr');
+    var html = '<td>' + row.team + '</td>';
+    keys.forEach(function(k) {
+      var val = row[k];
+      var ext = extremes[k];
+      var cls = '';
+      var isLower = lowerBetter.indexOf(k) >= 0;
+      if (isLower) {
+        if (val === ext.min) cls = 'val-best';
+        else if (val === ext.max) cls = 'val-worst';
+      } else {
+        if (val === ext.max) cls = 'val-best';
+        else if (val === ext.min) cls = 'val-worst';
+      }
+      if (k === 'completion_rate_avg' && val < 74) cls = 'val-warn';
+      html += '<td class="' + cls + '">' + val + '</td>';
+    });
+    tr.innerHTML = html;
+    tbody.appendChild(tr);
+  });
+
+  document.querySelectorAll('.stats-table th').forEach(function(th) { th.classList.remove('sorted'); });
+  var keyMap = ['team','run_metres_avg','post_contact_metres_avg','completion_rate_avg',
+    'missed_tackles_avg','errors_avg','penalties_avg','line_breaks_avg',
+    'possession_avg','kick_metres_avg','tackle_efficiency_avg','ptb_speed_avg'];
+  var idx = keyMap.indexOf(sortKey);
+  var ths = document.querySelectorAll('.stats-table th');
+  if (idx >= 0 && ths[idx]) ths[idx].classList.add('sorted');
+}
+
+function sortStats(key) {
+  if (sortKey === key) sortAsc = !sortAsc;
+  else { sortKey = key; sortAsc = false; }
+  renderStats();
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
